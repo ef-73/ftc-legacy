@@ -1,0 +1,18 @@
+# ===== FTC / Android Studio =====
+**/build/
+**/.gradle/
+**/.idea/
+**/*.iml
+**/out/
+
+# Local machine config (don’t commit)
+**/local.properties
+
+# Logs / OS
+**/*.log
+.DS_Store
+Thumbs.db
+
+# Optional: if you use Road Runner / other caches
+**/.classpath
+**/.project

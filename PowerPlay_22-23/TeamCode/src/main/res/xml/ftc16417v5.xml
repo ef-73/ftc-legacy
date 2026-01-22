@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<Robot type="FirstInspires-FTC">
+    <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
+        <LynxModule name="Expansion Hub 1" port="1">
+            <goBILDA5202SeriesMotor name="hSlide1" port="2" />
+            <goBILDA5202SeriesMotor name="hSlide2" port="3" />
+            <goBILDA5202SeriesMotor name="vSlide1" port="0" />
+            <goBILDA5202SeriesMotor name="vSlide2" port="1" />
+
+            <Servo name="vcPan1" port="0" />
+            <Servo name="vcPan2" port="1" />
+            <Servo name="vcTiltRight" port="2" />
+            <Servo name="vcRotate" port="3" />
+            <Servo name="vcClaw" port="4" />
+            <Servo name="vcTiltLeft" port="5" />
+            <!--REV_VL53L0X_RANGE_SENSOR name="vLeftDis" port="0" bus="2" /-->
+            <!--REV_VL53L0X_RANGE_SENSOR name="vRightDis" port="0" bus="1" /-->
+            <!--REV_VL53L0X_RANGE_SENSOR name="vMiddleDis" port="0" bus="0" /-->
+            <RevTouchSensor name="hTouch" port="1" />
+            <RevTouchSensor name="vTouch" port="3" />
+        </LynxModule>
+        <LynxModule name="Control Hub" port="173">
+            <goBILDA5202SeriesMotor name="lf" port="0" />
+            <goBILDA5202SeriesMotor name="rf" port="1" />
+            <goBILDA5202SeriesMotor name="lr" port="2" />
+            <goBILDA5202SeriesMotor name="rr" port="3" />
+            <Servo name="hcPan" port="0" />
+            <Servo name="hcTilt1Left" port="1" />
+            <Servo name="hcTilt1Right" port="2" />
+            <Servo name="hcTilt2" port="3" />
+            <Servo name="hcClaw" port="4" />
+            <Servo name="hcBlock" port="5" />
+            <!--Servo name="ConeSweeper" port="5" /-->
+            <LynxEmbeddedIMU name="imu" port="0" bus="0" />
+
+            <AnalogInput name="leftCone" port="1" />
+            <AnalogInput name="rightCone" port="0" />
+            <!--ControlHubImuBHI260AP name="imu" port="0" bus="0" /-->
+            <!--LynxColorSensor name="colorSensor1" port="0" bus="1" /-->
+            <!--REV_VL53L0X_RANGE_SENSOR name="hLeftDis" port="0" bus="1" /-->
+            <!--REV_VL53L0X_RANGE_SENSOR name="hRightDis" port="0" bus="0" /-->
+
+
+        </LynxModule>
+    </LynxUsbDevice>
+    <!-- scan to found the right camera serial number, then add it here -->
+    <Webcam name="Webcam 1" serialNumber="BF739E40" />
+</Robot>
