@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<Robot type="FirstInspires-FTC">
+    <LynxUsbDevice name="Control Hub Portal" serialNumber="(embedded)" parentModuleAddress="173">
+        <LynxModule name="Expansion Hub 2" port="2">
+            <goBILDA5202SeriesMotor name="hangMotor" port="0" />
+            <goBILDA5202SeriesMotor name="rf" port="1" />
+            <goBILDA5202SeriesMotor name="intakeMotor" port="2" />
+            <goBILDA5202SeriesMotor name="rr" port="3" />
+
+
+            <REV_VL53L0X_RANGE_SENSOR name="rightDis" port="0" bus="1" />
+            <REV_VL53L0X_RANGE_SENSOR name="rightSideDis" port="0" bus="2" />
+
+            <Servo name="backLock" port="0" />
+            <Servo name="frontLock" port="1" />
+            <Servo name="trayRotate" port="2" />
+            <Servo name="trayTilt" port="3" />
+            <Servo name="leftTilt" port="4" />
+            <Servo name="rightTilt" port="5" />
+
+            <DigitalDevice name="touchBoardSensor" port="1" />
+
+            <DigitalDevice name="green2" port="6" />
+            <DigitalDevice name="red2" port="7" />
+
+        </LynxModule>
+        <LynxModule name="Control Hub" port="173">
+            <goBILDA5202SeriesMotor name="lf" port="0" />
+            <goBILDA5202SeriesMotor name="airplaneLaunchMotor" port="1" />
+            <goBILDA5202SeriesMotor name="lr" port="2" />
+            <goBILDA5202SeriesMotor name="slider" port="3" />
+
+            <Servo name="leftIntakePushServo" port="0" />
+            <Servo name="rightIntakePushServo" port="1" />
+            <Servo name = "leftDropPurpleServo" port="2"></Servo>
+            <Servo name = "rightDropPurpleServo" port="3"></Servo>
+
+            <Servo name = "airplaneLaunchServo" port="4"></Servo>
+            <Servo name = "trayHSlide" port="5"></Servo>
+
+
+
+
+            <!--ControlHubImuBHI260AP name="imu" port="0" bus="0"/-->
+            <LynxEmbeddedIMU name="imu" port="0" bus="0"/>
+            <!--LynxColorSensor name="colorSensor1" port="0" bus="1" /-->
+            <REV_VL53L0X_RANGE_SENSOR name="leftDis" port="0" bus="1" />
+            <REV_VL53L0X_RANGE_SENSOR name="leftSideDis" port="0" bus="2" />
+            <RevTouchSensor name="resetTouch" port="1" />
+
+            <DigitalDevice name="green1" port="6" />
+            <DigitalDevice name="red1" port="7" />
+
+        </LynxModule>
+    </LynxUsbDevice>
+    <!-- scan to found the right camera serial number, then add it here -->
+    <!--Webcam name="WebcamBack" serialNumber="389EAF60" /-->
+    <!-- C720 /-->
+    <!-- Webcam name="WebcamFront" serialNumber="37737F60" /-->
+    <!--Webcam name="WebcamFront" serialNumber="ACEECE60" /-->
+
+    <!-- C920 /-->
+    <Webcam name="WebcamBack" serialNumber="4012B72F" />
+    <Webcam name="WebcamFront" serialNumber="EA40B8AF" />
+</Robot>
