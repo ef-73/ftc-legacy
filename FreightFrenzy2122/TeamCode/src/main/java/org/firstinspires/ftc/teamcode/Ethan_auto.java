@@ -1,0 +1,328 @@
+/* Copyright (c) 2017 FIRST. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted (subject to the limitations in the disclaimer below) provided that
+ * the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this list
+ * of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice, this
+ * list of conditions and the following disclaimer in the documentation and/or
+ * other materials provided with the distribution.
+ *
+ * Neither the name of FIRST nor the names of its contributors may be used to endorse or
+ * promote products derived from this software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
+ * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
+
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
+import org.firstinspires.ftc.teamcode.Examples.MecanumRobotDrive;
+import org.firstinspires.ftc.teamcode.Examples.samples.*;
+
+import java.util.List;
+
+// 2021 game, autonomous code
+
+@Autonomous(name="Ethan_auto", group="Linear Opmode")
+//@Disabled
+public class Ethan_auto extends LinearOpMode {
+    /* Note: This sample uses the all-objects Tensor Flow model (FreightFrenzy_BCDM.tflite), which contains
+     * the following 4 detectable objects
+     *  0: Ball,
+     *  1: Cube,
+     *  2: Duck,
+     *  3: Marker (duck location tape marker)
+     *
+     *  Two additional model assets are available which only contain a subset of the objects:
+     *  FreightFrenzy_BC.tflite  0: Ball,  1: Cube
+     *  FreightFrenzy_DM.tflite  0: Duck,  1: Marker
+     */
+    private static final String TFOD_MODEL_ASSET = "FreightFrenzy_BCDM.tflite";
+    private static final String[] LABELS = {
+            "Ball",
+            "Cube",
+            "Duck",
+            "Marker"
+    };
+
+    /*
+     * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
+     * 'parameters.vuforia LicenseKey' is initialized is for illustration only, and will not function.
+     * A Vuforia 'Development' license key, can be obtained free of charge from the Vuforia developer
+     * web site at https://developer.vuforia.com/license-manager.
+     *
+     * Vuforia license keys are always 380 characters long, and look as if they contain mostly
+     * random data. As an example, here is a example of a fragment of a valid key:
+     *      ... yIgIzTqZ4mWjk9wd3cZO9T1axEqzuhxoGlfOOI2dRzKS4T0hQ8kT ...
+     * Once you've obtained a license key, copy the string from the Vuforia web site
+     * and paste it in to your code on the next line, between the double quotes.
+     */
+    private static final String VUFORIA_KEY =
+            "ARSsLcv/////AAABmaPnuXwWvUUcmEwKRJUD7zsqO7JIqriiHhFyZBocTTTMF8T8EA4mCbJtMqnxh1TufzQXUOapLLMgLOG9+pJ77k4LT2uFLHXqlvu6yEXSpXpYi2xtaMfGHYOnxiDtXXjp+1BUc/jZBGgET0URPPPu1HXwGy8MSHS5PDM7ZlZobnMSAuHZFKjue5KYUHBHe4QBbZ1/S9ybpA33GNHpcwK3NPAI0jeXkrovdvBDq0fE56lMN7xTsGOKcQWf8KdpKhWdvS9lzd2u1mGbNontyiXJVyKSC5E7Vr4wszt68uiSCPEy4kWZ0eh+5S0MmgJZprRo7SX4s9tSXCmuU+bceuu2X8kXZAzwX78EtkqrEe1bm3O+";
+
+    /**
+     * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
+     * localization engine.
+     */
+    private VuforiaLocalizer vuforia;
+
+    /**
+     * {@link #tfod} is the variable we will use to store our instance of the TensorFlow Object
+     * Detection engine.
+     */
+    private TFObjectDetector tfod;
+
+    MecanumRobotDrive robot;   //
+    private ElapsedTime runtime = new ElapsedTime();
+    private PositionEstimation positionEstimation = null;
+    private PositionControl positionControl = null;
+
+    private volatile double[] robotPos = new double[3];
+    private volatile double[] targetPos = new double[3];
+
+    private final int PICK_POSITION = 0;
+    private final int LEVEL1_POSITION = 988;
+    private final int LEVEL2_POSITION = 2250;
+    private final int LEVEL3_POSITION = 3480;
+    @Override
+    public void runOpMode() throws InterruptedException {
+        robot = new MecanumRobotDrive(hardwareMap);
+        while(!robot.imu.isAccelerometerCalibrated() &&
+                !robot.imu.isGyroCalibrated() &&
+                !robot.imu.isMagnetometerCalibrated() &&
+                !robot.imu.isSystemCalibrated()){
+            Thread.yield();
+        }
+        this.positionEstimation = new PositionEstimation(robot);
+        this.positionControl = new PositionControl(robot, this.positionEstimation);
+        this.positionControl.stopRobot();
+
+        // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
+        // first.
+        //initVuforia();
+        //initTfod();
+
+        /**
+         * Activate TensorFlow Object Detection before we wait for the start command.
+         * Do it here so that the Camera Stream window will have the TensorFlow annotations visible.
+         **/
+        /*if (tfod != null) {
+            tfod.activate();
+
+            // The TensorFlow software will scale the input images from the camera to a lower resolution.
+            // This can result in lower detection accuracy at longer distances (> 55cm or 22").
+            // If your target is at distance greater than 50 cm (20") you can adjust the magnification value
+            // to artificially zoom in to the center of image.  For best results, the "aspectRatio" argument
+            // should be set to the value of the images used to create the TensorFlow Object Detection model
+            // (typically 16/9).
+            tfod.setZoom(2.3, 16.0/9.0);
+        }*/
+
+
+
+        telemetry.addData("Status", "Initialized");
+
+        telemetry.addData(">", "Press Play to start autonomous program");
+        telemetry.update();
+
+        // Wait for the game to start (driver presses PLAY)
+        waitForStart();
+        runtime.reset();
+
+        int posFlag = 1;
+        /*
+        //first detect object position
+        int markerCnt = 0;
+        int cubeCnt = 0;
+        float[] cubeX = new float[2];
+        float[] markerX = new float[2];
+        //set detectFlag = true for disable detect first
+        boolean detectFlag = true;
+        int posFlag = 1;
+        while(!detectFlag){
+            if (tfod != null) {
+                // getUpdatedRecognitions() will return null if no new information is available since
+                // the last time that call was made.
+                List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
+                if (updatedRecognitions != null) {
+                    telemetry.addData("# Object Detected", updatedRecognitions.size());
+
+                    // step through the list of recognitions and display boundary info.
+                    int i = 0;
+                    for (Recognition recognition : updatedRecognitions) {
+                        telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                        if (recognition.getLabel() == "Marker") {
+                            markerX[markerCnt] = recognition.getRight();
+                            markerCnt++;
+                            if (markerCnt > 1) {
+                                detectFlag = true;
+                            }
+
+                        } else if (recognition.getLabel() == "Cube") {
+                            cubeX[cubeCnt] = recognition.getRight();
+                            cubeCnt++;
+                            detectFlag = true;
+                        }
+                        telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                                recognition.getLeft(), recognition.getTop());
+                        telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                                recognition.getRight(), recognition.getBottom());
+                        i++;
+                    }
+                    telemetry.update();
+                }
+            }
+        }
+        if (cubeCnt > 0){
+            //
+            if (cubeX[0] > 700){
+                posFlag = 2;
+            }
+            else{
+                posFlag = 1;
+            }
+        }
+        else{
+            posFlag = 3;
+        }
+
+        telemetry.addData("Detect Position:", "%d", posFlag);
+        telemetry.update();
+        */
+
+        // understanding coordinate system
+        //              Robot Front
+        //                  ^ (X+)
+        //                  |
+        //                  |
+        //Robot Left(Y+)    |       Robot Right(Y-)
+        //<-----------------------------------------
+        //                  |
+        //                  |(X-)
+        posFlag = 1;  //just for debug
+        if (posFlag == 10) {
+            robot.Arm_H.setTargetPosition(LEVEL3_POSITION);
+            robot.Arm_H.setPower(0.5f);
+            robot.Arm_H.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            while(robot.Arm_H.getCurrentPosition() < 2700){}
+            goToWayPoint(0.50,0, 0.0,0.8,90, 0.02,1);
+            robot.Intake.setPower(-0.8);
+        }
+
+
+        //goToWayPoint(1.2,-1.2, 90,1.5,90, 0.02,1);
+        //goToWayPoint(0.00,0.0, 90,1.0,180, 0.02,2);
+        //this.positionControl.driveRobot(0.2,0.2,0.2,0.2-);
+
+        while (opModeIsActive()) {
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            robotPos = positionEstimation.getRobotPos();
+
+            goToWayPoint(0.2, 0.5, 0, 10, 2, 1, 1);
+            goToWayPoint(0.2, 0.5, 0, 2, 2, 1, 1);
+
+            telemetry.addData("Detect Position",  "at %d",posFlag);
+            telemetry.addData("RobotPos",  "at %5f :%5f:%5f",
+                    robotPos[0], robotPos[1], robotPos[2] * 180 / Math.PI);
+            telemetry.addData("Debug",  "at %5f",
+                    positionControl.debug_task());
+            if (this.positionControl.checkTaskDone()){
+                telemetry.addData("Task", "Done");
+            }
+            telemetry.update();
+        }
+        this.positionControl.stopRobot();
+    }
+
+    /****************************************************************************
+     *
+     * @param x: position x value, unit: m
+     * @param y: position y value, unit: m
+     * @param angle: position orientation, unit : degree
+     * @param vel: linear velocity, unit: m/s
+     * @param vw: turning velocity, unit: degree/s, 90, means turn 90 degree in one second
+     * @param disRes: position(x,x) resolution, for example, 0.02, it means in 2cm radius of target, the position control is done
+     * @param angleRes: orientation control resolution, for example, 5, it means in 5 degree error, the control is done
+     * @throws InterruptedException
+     */
+
+    private void goToWayPoint(double x, double y, double angle, double vel, double vw, double disRes, double angleRes) throws InterruptedException {
+        targetPos[0] = x;//1.5;  //x
+        targetPos[1] = y;//-0.6;   //y
+        targetPos[2] = angle * Math.PI / 180; // Math.PI /2;   //heading, radian
+        this.positionControl.goToTargetPosition(targetPos, vel,vw * Math.PI / 180, disRes,angleRes);
+        while(!this.positionControl.checkTaskDone()){
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            robotPos = positionEstimation.getRobotPos();
+            telemetry.addData("RobotPos",  "at %5f :%5f:%5f",
+                    robotPos[0], robotPos[1], robotPos[2] * 180 / Math.PI);
+            telemetry.addData("Debug",  "at %5f",
+                    positionControl.debug_task());
+            if (this.positionControl.checkTaskDone()){
+                telemetry.addData("Task", "Done");
+            }
+            telemetry.update();
+        }
+        Thread.sleep(200);
+    }
+
+    /**
+     * Initialize the Vuforia localization engine.
+     */
+    private void initVuforia() {
+        /*
+         * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
+         */
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+
+        //  Instantiate the Vuforia engine
+        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+
+        // Loading trackables is not necessary for the TensorFlow Object Detection engine.
+    }
+
+    /**
+     * Initialize the TensorFlow Object Detection engine.
+     */
+    private void initTfod() {
+        int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
+        tfodParameters.minResultConfidence = 0.6f;
+        tfodParameters.isModelTensorFlow2 = true;
+        tfodParameters.inputSize = 320;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABELS);
+    }
+
+
+}
